@@ -1,11 +1,8 @@
-# REE Generation Forecast
+## Data
 
-Forecasting renewable energy generation in Spain.
+This project uses the ["Hourly energy demand generation and weather"](https://www.kaggle.com/datasets/nicholasjhana/energy-consumption-generation-prices-and-weather) 
+dataset from Kaggle (4 years of Spanish electricity generation, demand, and weather data).
 
-## Data sources
-- **Training data:** Kaggle's "Hourly energy demand generation and weather" 
-  dataset (4 years of historical Spanish generation, demand, and weather data)
-- **Live data (for deployment):** REE's public REData API 
-  (`pull_ree_generation_data.py`) — currently unavailable due to an ongoing 
-  service issue on REE's end as of July 2026; will be used once the API 
-  is back for the live dashboard stage.
+To reproduce this project:
+1. Download the dataset from the Kaggle link above
+2. Place the CSVs in a `data/` folder in the project root
