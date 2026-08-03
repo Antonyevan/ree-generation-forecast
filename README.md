@@ -1,8 +1,15 @@
-## Data
+## Running the dashboard
+```bash
+pip install streamlit scikit-learn pandas
+streamlit run dashboard.py
+```
 
-This project uses the ["Hourly energy demand generation and weather"](https://www.kaggle.com/datasets/nicholasjhana/energy-consumption-generation-prices-and-weather) 
-dataset from Kaggle (4 years of Spanish electricity generation, demand, and weather data).
+## Note on scope
+A GenAI explanation layer (translating forecast errors into plain-language 
+summaries) was considered but deliberately scoped out to keep the project 
+focused on the core forecasting problem.
 
-To reproduce this project:
-1. Download the dataset from the Kaggle link above
-2. Place the CSVs in a `data/` folder in the project root
+## Note on live data
+REE's public REData API has been unavailable since July 24, 2026. The dashboard 
+currently replays historical test-period data. REE's ESIOS API (a separate, 
+token-based service) is a planned integration path once available.
