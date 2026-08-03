@@ -29,3 +29,11 @@ predictions = model.predict(X_test)
 model_mae = mean_absolute_error(y_test, predictions)
 print(f"Your model's MAE: {model_mae:.1f} MW")
 print(f"REE's baseline MAE: {baseline_mae:.1f} MW")
+
+test = test.copy()
+test['model_pred'] = predictions
+test['model_error'] = abs(test['generation solar'] - test['model_pred'])
+test['baseline_error'] = abs(test['generation solar'] - test['forecast solar day ahead'])
+
+monthly_comparison = test.groupby(test['time'].dt.to_period('M'))[['model_error', 'baseline_error']].mean()
+print(monthly_comparison)
