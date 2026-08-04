@@ -39,6 +39,8 @@ This project didn't arrive at its current form in a straight line, and the path 
 
 This progression — build, validate, deploy, discover a real limitation, respond appropriately — is arguably the most representative part of this project, more so than any single metric.
 
+**Update:** REE's original REData API (`pull_ree_generation_data.py`) came back online during this project, after being down for its first ~10 days. This project has since standardized on the ESIOS API for live/recent data, so that script remains as a historical artifact of the initial outage investigation rather than part of the active pipeline.
+
 ---
 
 ## Data sources
