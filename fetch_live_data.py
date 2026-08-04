@@ -1,44 +1,46 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  4 12:58:37 2026
-
-@author: antonyevanalosius
-"""
-
 import os
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 TOKEN = os.environ["ESIOS_API_TOKEN"]
 HEADERS = {"x-api-key": TOKEN, "Accept": "application/json"}
 
 INDICATORS = {
-    "actual_solar": 1295,   
-    "forecast_solar": 542,  
+    "actual_solar": 1295,    # Generación T.Real Solar fotovoltaica
+    "forecast_solar": 542,   # Generación prevista solar fotovoltaica
+    "actual_wind": 551,      # Generación T.Real eólica
 }
 
 
-def fetch_indicator(indicator_id):
+def fetch_indicator(indicator_id, start_date, end_date):
     url = f"https://api.esios.ree.es/indicators/{indicator_id}"
-    resp = requests.get(url, headers=HEADERS, timeout=30)
+    params = {
+        "start_date": start_date.strftime("%Y-%m-%dT%H:%M"),
+        "end_date": end_date.strftime("%Y-%m-%dT%H:%M"),
+    }
+    resp = requests.get(url, headers=HEADERS, params=params, timeout=30)
     resp.raise_for_status()
     return resp.json()["indicator"]["values"]
 
 
 def main():
+    end_date = datetime.now()
+    start_date = end_date - timedelta(hours=48)
+
     live_data = {"fetched_at": datetime.now().isoformat()}
 
     for label, indicator_id in INDICATORS.items():
         print(f"Fetching {label} (indicator {indicator_id})...")
-        live_data[label] = fetch_indicator(indicator_id)
+        live_data[label] = fetch_indicator(indicator_id, start_date, end_date)
 
+    os.makedirs("data", exist_ok=True)
     with open("data/live_solar_cache.json", "w") as f:
         json.dump(live_data, f)
 
-    print(f"Saved live cache with {len(live_data['actual_solar'])} actual points "
-          f"and {len(live_data['forecast_solar'])} forecast points.")
+    print(f"Saved live cache: {len(live_data['actual_solar'])} actual solar points, "
+          f"{len(live_data['forecast_solar'])} forecast points, "
+          f"{len(live_data['actual_wind'])} wind points.")
 
 
 if __name__ == "__main__":
