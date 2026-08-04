@@ -24,8 +24,45 @@ def time_based_split(df, test_days=180):
     return train, test
 
 
+def build_live_features(live_data):
+    """
+    Build the same features used in training, but from live ESIOS data.
+
+    live_data is the dict loaded from data/live_solar_cache.json — raw
+    5-minute readings for actual solar and wind, plus hourly forecast.
+    We resample to hourly first, since that's the resolution the model
+    was trained on.
+    """
+    solar = pd.DataFrame(live_data["actual_solar"])
+    wind = pd.DataFrame(live_data["actual_wind"])
+    forecast = pd.DataFrame(live_data["forecast_solar"])
+
+    for df in (solar, wind, forecast):
+        df["datetime"] = pd.to_datetime(df["datetime"])
+
+    # Resample 5-min readings to hourly (mean), matching training data's resolution
+    solar_hourly = solar.set_index("datetime")["value"].resample("h").mean()
+    wind_hourly = wind.set_index("datetime")["value"].resample("h").mean()
+    forecast_hourly = forecast.set_index("datetime")["value"].resample("h").mean()
+
+    df = pd.DataFrame({
+        "generation solar": solar_hourly,
+        "generation wind onshore": wind_hourly,
+        "forecast solar day ahead": forecast_hourly,
+    }).dropna(subset=["generation solar"])  # only keep hours with real actual data
+
+    df = df.reset_index().rename(columns={"datetime": "time"}).sort_values("time")
+
+    df['solar_lag_24h'] = df['generation solar'].shift(24)
+    df['wind_lag_24h'] = df['generation wind onshore'].shift(24)
+    df['solar_rolling_3h'] = df['generation solar'].rolling(window=3).mean()
+    df['hour'] = df['time'].dt.hour
+    df['day_of_week'] = df['time'].dt.dayofweek
+
+    return df.dropna(subset=['solar_lag_24h', 'solar_rolling_3h', 'wind_lag_24h'])
+
+
 if __name__ == "__main__":
-    # Lets you still run this file directly to sanity-check it, like before
     df_clean = load_and_engineer()
     train, test = time_based_split(df_clean)
     print(f"Train: {len(train)} rows, Test: {len(test)} rows")
