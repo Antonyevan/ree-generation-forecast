@@ -12,33 +12,50 @@ st.caption("Gradient Boosting model vs REE's official day-ahead forecast")
 FEATURES = ['hour', 'day_of_week', 'solar_lag_24h', 'wind_lag_24h', 'solar_rolling_3h']
 
 
-# Train once, shared by both tabs
+# ── Historical model: trained on 2015-2018 Kaggle data ──────────────────
 @st.cache_data
-def get_trained_model_and_test():
+def get_historical_model_and_test():
     df_clean = load_and_engineer()
     train, test = time_based_split(df_clean)
     model = GradientBoostingRegressor(random_state=42)
     model.fit(train[FEATURES], train['generation solar'])
     test = test.copy()
     test['model_pred'] = model.predict(test[FEATURES])
-    return model, test
+    return test
 
 
-model, test = get_trained_model_and_test()
+# ── Recent model: trained on the last ~1 year of ESIOS data ────────────
+@st.cache_data
+def get_recent_model():
+    with open("data/recent_solar_data.json") as f:
+        recent_data = json.load(f)
+    df_clean = build_live_features(recent_data)
+    train, test = time_based_split(df_clean, test_days=60)
+    model = GradientBoostingRegressor(random_state=42)
+    model.fit(train[FEATURES], train['generation solar'])
+    return model
+
 
 tab_live, tab_historical = st.tabs(["🔴 Live (Today)", "📅 Historical Replay"])
 
 
-# ── LIVE TAB ──────────────────────────────────────────────────────────
+# ── LIVE TAB — uses the recent-data model ───────────────────────────────
 with tab_live:
     cache_path = "data/live_solar_cache.json"
+    recent_model_path = "data/recent_solar_data.json"
 
     if not os.path.exists(cache_path):
         st.warning(
             "No live data cached yet. Run `python3 fetch_live_data.py` to fetch "
             "the latest data from REE's ESIOS API."
         )
+    elif not os.path.exists(recent_model_path):
+        st.warning(
+            "Recent training data not found. Run `python3 pull_recent_data.py` first."
+        )
     else:
+        recent_model = get_recent_model()
+
         with open(cache_path) as f:
             live_data = json.load(f)
 
@@ -51,7 +68,7 @@ with tab_live:
             )
         else:
             live_features = live_features.copy()
-            live_features['model_pred'] = model.predict(live_features[FEATURES])
+            live_features['model_pred'] = recent_model.predict(live_features[FEATURES])
 
             live_display = live_features.rename(columns={
                 'generation solar': 'Actual',
@@ -76,14 +93,22 @@ with tab_live:
             fetched_at = pd.to_datetime(live_data["fetched_at"])
             st.caption(f"📡 Live data from REE's ESIOS API — last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')}")
             st.caption(
-                "Note: per ESIOS API terms of use, this data is fetched and cached "
-                "periodically rather than queried live per visitor. Live features are "
-                "resampled to hourly to match the resolution the model was trained on."
+                "Note: the MAE above reflects only the current ~24-48h window shown — "
+                "a small, noisy sample. On the full 60-day held-out test set, this "
+                "model beats REE's forecast by 36.3% on average (638.5 MW vs 1001.7 "
+                "MW MAE). Single-day results will vary."
+            )
+            st.caption(
+                "This model is trained on the last ~1 year of ESIOS data — see "
+                "'Project Journey' in the README for why this differs from the "
+                "Historical Replay tab's model."
             )
 
 
-# ── HISTORICAL TAB ────────────────────────────────────────────────────
+# ── HISTORICAL TAB — uses the original 2015-2018 model ──────────────────
 with tab_historical:
+    test = get_historical_model_and_test()
+
     available_dates = sorted(test['time'].dt.date.unique())
     default_date = available_dates[len(available_dates) // 2]
 
@@ -112,8 +137,8 @@ with tab_historical:
     )
 
     st.caption(
-        "Note: single-day comparisons are noisy — some days REE wins, some days the "
-        "Gradient Boosting model wins. Averaged across the full 6-month test period, "
-        "the Gradient Boosting model outperforms REE's forecast by ~22% (96.6 MW vs "
-        "123.6 MW MAE)."
+        "This model is trained on 2015-2018 historical data and outperforms REE's "
+        "2018 forecast by ~22% on average. It is shown here for comparison — see "
+        "'Project Journey' in the README for why a separate, more recent model "
+        "powers the Live tab."
     )
