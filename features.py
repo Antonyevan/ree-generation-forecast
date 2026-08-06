@@ -38,9 +38,8 @@ def build_live_features(live_data):
     forecast = pd.DataFrame(live_data["forecast_solar"])
 
     for df in (solar, wind, forecast):
-        df["datetime"] = pd.to_datetime(df["datetime"])
+        df["datetime"] = pd.to_datetime(df["datetime"], utc=True)
 
-    # Resample 5-min readings to hourly (mean), matching training data's resolution
     solar_hourly = solar.set_index("datetime")["value"].resample("h").mean()
     wind_hourly = wind.set_index("datetime")["value"].resample("h").mean()
     forecast_hourly = forecast.set_index("datetime")["value"].resample("h").mean()
@@ -49,7 +48,7 @@ def build_live_features(live_data):
         "generation solar": solar_hourly,
         "generation wind onshore": wind_hourly,
         "forecast solar day ahead": forecast_hourly,
-    }).dropna(subset=["generation solar"])  # only keep hours with real actual data
+    }).dropna(subset=["generation solar"])
 
     df = df.reset_index().rename(columns={"datetime": "time"}).sort_values("time")
 

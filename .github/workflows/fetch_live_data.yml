@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Aug  6 12:04:22 2026
+
+@author: antonyevanalosius
+"""
+
+import json
+import pandas as pd
+from sklearn.ensemble import GradientBoostingRegressor
+from features import build_live_features, time_based_split
+
+FEATURES = ['hour', 'day_of_week', 'solar_lag_24h', 'wind_lag_24h', 'solar_rolling_3h']
+
+with open("data/recent_solar_data.json") as f:
+    recent_data = json.load(f)
+
+df_clean = build_live_features(recent_data)
+train, test = time_based_split(df_clean, test_days=60)
+
+model = GradientBoostingRegressor(random_state=42)
+model.fit(train[FEATURES], train['generation solar'])
+test = test.copy()
+test['model_pred'] = model.predict(test[FEATURES])
+
+test['model_error'] = abs(test['generation solar'] - test['model_pred'])
+test['baseline_error'] = abs(test['generation solar'] - test['forecast solar day ahead'])
+test['date'] = test['time'].dt.date
+
+july = test[(test['time'].dt.month == 7)]
+daily_july = july.groupby('date')[['model_error', 'baseline_error']].mean().round(1)
+daily_july['winner'] = daily_july.apply(
+    lambda r: 'Model' if r['model_error'] < r['baseline_error'] else 'REE', axis=1
+)
+
+print(daily_july)
+print(f"\nModel won {(daily_july['winner']=='Model').sum()} of {len(daily_july)} July days")
