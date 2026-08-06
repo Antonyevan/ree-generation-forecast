@@ -25,7 +25,7 @@ def get_historical_model_and_test():
 
 
 # ── Recent model: trained on the last ~1 year of ESIOS data ────────────
-@st.cache_data
+@st.cache_data(ttl=3600)  # rebuild at most once per hour, so weekly data refreshes actually get picked up
 def get_recent_model_and_test():
     with open("data/recent_solar_data.json") as f:
         recent_data = json.load(f)
