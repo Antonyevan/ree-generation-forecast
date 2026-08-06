@@ -25,7 +25,12 @@ Two tabs, each backed by a separately trained model:
 
 ## Live data auto-refresh
 
-The dashboard's live data doesn't require anyone to manually run a script. A **GitHub Actions workflow** (`.github/workflows/fetch_live_data.yml`) runs every 30 minutes, fetches fresh data from REE's ESIOS API, and commits the updated cache file straight back to this repository. The deployed dashboard simply reads whatever's currently in the repo — so it stays current with zero manual intervention.
+Two scheduled GitHub Actions workflows keep the dashboard's data genuinely current, with no manual script runs required:
+
+- **`fetch_live_data.yml`** — runs **every 30 minutes**, fetches the latest actual/forecast data from ESIOS, and commits the updated `data/live_solar_cache.json` back to the repo. Powers the Live tab's "right now" chart and metrics.
+- **`refresh_recent_data.yml`** — runs **every Sunday at 03:00 UTC**, re-pulls a full fresh year of ESIOS data and commits the updated `data/recent_solar_data.json`. This keeps the 60-day back-tested window genuinely rolling forward over time, rather than staying frozen at whichever date the data was first pulled.
+
+The deployed dashboard simply reads whatever's currently committed to the repo — it never calls ESIOS directly itself. Its own cache (`@st.cache_data(ttl=3600)`) rebuilds at most once per hour, so these scheduled refreshes actually reach what visitors see, rather than being silently ignored by a cache that never expires.
 
 Per ESIOS's terms of use, live data is fetched and cached periodically this way, rather than queried live by each dashboard visitor.
 
@@ -83,7 +88,8 @@ This progression — build, validate, deploy, discover a real limitation, respon
 | `train_model_recent.py` | Trains and evaluates the recent-data model against REE's current forecast |
 | `fetch_live_data.py` | Fetches and caches today's live data from ESIOS, for the dashboard's Live tab (run automatically by GitHub Actions every 30 minutes) |
 | `dashboard.py` | The Streamlit dashboard — Live and Historical Replay tabs |
-| `.github/workflows/fetch_live_data.yml` | GitHub Actions workflow that automates the live data refresh |
+| `.github/workflows/fetch_live_data.yml` | GitHub Actions workflow: refreshes live cache every 30 minutes |
+| `.github/workflows/refresh_recent_data.yml` | GitHub Actions workflow: refreshes the full year of recent training data every Sunday |
 | `requirements.txt` | Python dependencies for deployment |
 
 ---
