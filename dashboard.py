@@ -94,7 +94,7 @@ with tab_live:
             )
 
             fetched_at = pd.to_datetime(live_data["fetched_at"])
-            st.caption(f"📡 Live data from REE's ESIOS API — last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')}")
+            st.caption(f"📡 Live data from REE's ESIOS API — last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC")
             st.caption(
                 "Note: the MAE above reflects only the current ~24-48h window shown — "
                 "a small, noisy sample."
