@@ -196,9 +196,18 @@ with tab_historical:
         f"{abs(day_data['generation solar'] - day_data['model_pred']).mean():.1f} MW"
     )
 
+    overall_model_mae = abs(test["generation solar"] - test["model_pred"]).mean()
+    overall_baseline_mae = abs(test["generation solar"] - test["forecast solar day ahead"]).mean()
+    diff_pct = (overall_baseline_mae - overall_model_mae) / overall_baseline_mae * 100
+
+    if diff_pct > 0:
+        comparison_text = f"outperforms REE's 2018 forecast by {diff_pct:.0f}% on average"
+    else:
+        comparison_text = f"currently underperforms REE's 2018 forecast by {abs(diff_pct):.0f}% on average"
+
     st.caption(
-        "This model is trained on 2015-2018 historical data and outperforms REE's "
-        "2018 forecast by ~22% on average. It is shown here for comparison — see "
-        "'Project Journey' in the README for why a separate, more recent model "
+        f"This model is trained on 2015-2018 historical data and {comparison_text} "
+        f"({overall_model_mae:.1f} MW vs {overall_baseline_mae:.1f} MW MAE, full test period). "
+        "See 'Project Journey' in the README for why a separate, more recent model "
         "powers the Live tab."
     )
