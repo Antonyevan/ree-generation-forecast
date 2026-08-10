@@ -2,6 +2,7 @@ import json
 import os
 import streamlit as st
 import pandas as pd
+import altair as alt
 from sklearn.ensemble import GradientBoostingRegressor
 from features import load_and_engineer, time_based_split, build_live_features
 
@@ -78,10 +79,30 @@ with tab_live:
                 'model_pred': 'Gradient Boosting Forecast'
             })
 
-            st.line_chart(
-                live_display.set_index('time')[['Actual', 'REE Forecast', 'Gradient Boosting Forecast']],
-                color=['#9ca3af', '#ef4444', '#3b82f6']
+            chart_data = live_display.melt(
+                id_vars=['time'],
+                value_vars=['Actual', 'REE Forecast', 'Gradient Boosting Forecast'],
+                var_name='Series',
+                value_name='MW'
             )
+
+            color_scale = alt.Scale(
+                domain=['Actual', 'REE Forecast', 'Gradient Boosting Forecast'],
+                range=['#9ca3af', '#ef4444', '#3b82f6']
+            )
+
+            live_chart = alt.Chart(chart_data).mark_line().encode(
+                x=alt.X('time:T', title='Time (UTC)', axis=alt.Axis(format='%H:%M')),
+                y=alt.Y('MW:Q', title='Generation (MW)'),
+                color=alt.Color('Series:N', scale=color_scale, legend=alt.Legend(title=None)),
+                tooltip=[
+                    alt.Tooltip('time:T', title='Time', format='%b %d, %H:%M UTC'),
+                    alt.Tooltip('Series:N', title='Series'),
+                    alt.Tooltip('MW:Q', title='Value', format=',.0f'),
+                ]
+            ).interactive()
+
+            st.altair_chart(live_chart, use_container_width=True)
 
             col1, col2 = st.columns(2)
             col1.metric(
@@ -94,7 +115,13 @@ with tab_live:
             )
 
             fetched_at = pd.to_datetime(live_data["fetched_at"])
-            st.caption(f"📡 Live data from REE's ESIOS API — last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC")
+            latest_actual = live_features['time'].max()
+            st.caption(
+                f"📡 Cache last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC — "
+                f"most recent actual reading available: {latest_actual.strftime('%Y-%m-%d %H:%M')} UTC. "
+                "REE typically publishes actual generation data with a reporting lag of roughly 1-2 hours; "
+                "'last fetched' reflects when this cache was updated, not how current REE's own data is."
+            )
             st.caption(
                 "Note: the MAE above reflects only the current ~24-48h window shown — "
                 "a small, noisy sample."
@@ -196,8 +223,8 @@ with tab_historical:
         f"{abs(day_data['generation solar'] - day_data['model_pred']).mean():.1f} MW"
     )
 
-    overall_model_mae = abs(test["generation solar"] - test["model_pred"]).mean()
-    overall_baseline_mae = abs(test["generation solar"] - test["forecast solar day ahead"]).mean()
+    overall_model_mae = abs(test['generation solar'] - test['model_pred']).mean()
+    overall_baseline_mae = abs(test['generation solar'] - test['forecast solar day ahead']).mean()
     diff_pct = (overall_baseline_mae - overall_model_mae) / overall_baseline_mae * 100
 
     if diff_pct > 0:
