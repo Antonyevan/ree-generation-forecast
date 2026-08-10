@@ -91,16 +91,41 @@ with tab_live:
                 range=['#9ca3af', '#ef4444', '#3b82f6']
             )
 
-            live_chart = alt.Chart(chart_data).mark_line().encode(
+            hover = alt.selection_point(
+                fields=['time'],
+                nearest=True,
+                on='mouseover',
+                empty=False,
+            )
+
+            base = alt.Chart(chart_data).encode(
                 x=alt.X('time:T', title='Time (UTC)', axis=alt.Axis(format='%H:%M')),
                 y=alt.Y('MW:Q', title='Generation (MW)'),
                 color=alt.Color('Series:N', scale=color_scale, legend=alt.Legend(title=None)),
+            )
+
+            lines = base.mark_line()
+
+            points = base.mark_point(size=60, filled=True).encode(
+                opacity=alt.condition(hover, alt.value(1), alt.value(0))
+            )
+
+            # Wide, mostly-invisible layer: this is what actually catches the hover
+            # anywhere near the chart (not just directly on the thin line), and
+            # carries the tooltip content
+            hover_target = base.mark_point(size=250, opacity=0.01).add_params(hover).encode(
                 tooltip=[
                     alt.Tooltip('time:T', title='Time', format='%b %d, %H:%M UTC'),
                     alt.Tooltip('Series:N', title='Series'),
-                    alt.Tooltip('MW:Q', title='Value', format=',.0f'),
+                    alt.Tooltip('MW:Q', title='Value (MW)', format=',.0f'),
                 ]
-            ).interactive()
+            )
+
+            rule = base.mark_rule(color='#525C6B', strokeDash=[4, 4]).encode(
+                opacity=alt.condition(hover, alt.value(0.6), alt.value(0))
+            ).transform_filter(hover)
+
+            live_chart = (lines + rule + points + hover_target).properties(height=400)
 
             st.altair_chart(live_chart, use_container_width=True)
 
