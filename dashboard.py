@@ -143,18 +143,9 @@ with tab_live:
             latest_actual = live_features['time'].max()
             st.caption(
                 f"📡 Cache last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC — "
-                f"most recent actual reading available: {latest_actual.strftime('%Y-%m-%d %H:%M')} UTC. "
-                "These can occasionally differ, since 'last fetched' reflects when this cache was "
-                "updated, not necessarily how current REE's underlying data is at that moment."
-            )
-            st.caption(
-                "Note: the MAE above reflects only the current ~24-48h window shown — "
-                "a small, noisy sample."
-            )
-            st.caption(
-                "This model is trained on the last ~1 year of ESIOS data — see "
-                "'Project Journey' in the README for why this differs from the "
-                "Historical Replay tab's model."
+                f"latest hour with a complete prediction: {latest_actual.strftime('%Y-%m-%d %H:%M')} UTC. "
+                "MAE above reflects only this small ~24-48h window. Model trained on the last "
+                "~1 year of ESIOS data — see README for how this differs from Historical Replay."
             )
 
             # ── Full test-period daily breakdown ────────────────────
