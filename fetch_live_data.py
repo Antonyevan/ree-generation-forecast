@@ -7,17 +7,19 @@ TOKEN = os.environ["ESIOS_API_TOKEN"]
 HEADERS = {"x-api-key": TOKEN, "Accept": "application/json"}
 
 INDICATORS = {
-    "actual_solar": 1295,    # Generación T.Real Solar fotovoltaica
-    "forecast_solar": 542,   # Generación prevista solar fotovoltaica
-    "actual_wind": 551,      # Generación T.Real eólica
+    "actual_solar": 1295,
+    "forecast_solar": 542,
+    "actual_wind": 551,
 }
 
 
-def fetch_indicator(indicator_id, start_date, end_date):
+def fetch_indicator(indicator_id, start_date):
     url = f"https://api.esios.ree.es/indicators/{indicator_id}"
     params = {
         "start_date": start_date.strftime("%Y-%m-%dT%H:%M"),
-        "end_date": end_date.strftime("%Y-%m-%dT%H:%M"),
+        # Deliberately omitting end_date: testing showed ESIOS's date-ranged
+        # endpoint caps results ~1-2h behind real-time when end_date is set
+        # to "now", but returns fully current data when only start_date is given.
     }
     resp = requests.get(url, headers=HEADERS, params=params, timeout=30)
     resp.raise_for_status()
@@ -32,7 +34,7 @@ def main():
 
     for label, indicator_id in INDICATORS.items():
         print(f"Fetching {label} (indicator {indicator_id})...")
-        live_data[label] = fetch_indicator(indicator_id, start_date, end_date)
+        live_data[label] = fetch_indicator(indicator_id, start_date)
 
     os.makedirs("data", exist_ok=True)
     with open("data/live_solar_cache.json", "w") as f:
