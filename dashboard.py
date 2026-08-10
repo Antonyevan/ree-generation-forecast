@@ -119,8 +119,8 @@ with tab_live:
             st.caption(
                 f"📡 Cache last fetched {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC — "
                 f"most recent actual reading available: {latest_actual.strftime('%Y-%m-%d %H:%M')} UTC. "
-                "REE typically publishes actual generation data with a reporting lag of roughly 1-2 hours; "
-                "'last fetched' reflects when this cache was updated, not how current REE's own data is."
+                "These can occasionally differ, since 'last fetched' reflects when this cache was "
+                "updated, not necessarily how current REE's underlying data is at that moment."
             )
             st.caption(
                 "Note: the MAE above reflects only the current ~24-48h window shown — "
