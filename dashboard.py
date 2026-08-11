@@ -99,9 +99,19 @@ with tab_live:
             )
 
             base = alt.Chart(chart_data).encode(
-                x=alt.X('time:T', title='Time (UTC)', axis=alt.Axis(format='%H:%M')),
+                x=alt.X('time:T', title='Time (UTC)', axis=alt.Axis(format='%H:%M', tickCount=8, labelAngle=0)),
                 y=alt.Y('MW:Q', title='Generation (MW)'),
-                color=alt.Color('Series:N', scale=color_scale, legend=alt.Legend(title=None)),
+                color=alt.Color(
+                    'Series:N',
+                    scale=color_scale,
+                    legend=alt.Legend(
+                        title=None,
+                        orient='bottom',
+                        direction='horizontal',
+                        symbolSize=80,
+                        labelFontSize=11,
+                    )
+                ),
             )
 
             lines = base.mark_line()
