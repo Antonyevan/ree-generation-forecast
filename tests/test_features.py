@@ -54,3 +54,35 @@ def test_build_live_features_solar_rolling_3h_excludes_current_row():
 
     assert round(last_row["solar_rolling_3h"], 4) == round(expected, 4)
     assert round(last_row["solar_rolling_3h"], 4) != round(leaked_value, 4)
+
+
+def test_no_feature_depends_on_future_data(tmp_path):
+    """General leak check: mutating present/future rows must never
+    change past rows' feature values. Doesn't require knowing which
+    column might leak — catches any of them, known or not."""
+
+    def make_csv(path, corrupt_from=None):
+        n = 48
+        solar = [i * 10 for i in range(n)]
+        if corrupt_from is not None:
+            solar[corrupt_from:] = [999999] * (n - corrupt_from)
+        pd.DataFrame({
+            "time": pd.date_range("2018-08-27", periods=n, freq="h", tz="UTC"),
+            "generation solar": solar,
+            "generation wind onshore": [5] * n,
+        }).to_csv(path, index=False)
+
+    clean_path = tmp_path / "clean.csv"
+    corrupt_path = tmp_path / "corrupt.csv"
+    make_csv(clean_path)
+    make_csv(corrupt_path, corrupt_from=30)  # corrupt row 30 onward
+
+    df_clean = load_and_engineer(path=str(clean_path))
+    df_corrupt = load_and_engineer(path=str(corrupt_path))
+
+    # Only compare rows strictly before the corruption point (row 30)
+    cutoff = pd.Timestamp("2018-08-27", tz="UTC") + pd.Timedelta(hours=30)
+    before_clean = df_clean[df_clean["time"] < cutoff].reset_index(drop=True)
+    before_corrupt = df_corrupt[df_corrupt["time"] < cutoff].reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(before_clean, before_corrupt)
