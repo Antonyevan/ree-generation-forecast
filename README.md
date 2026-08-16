@@ -1,5 +1,7 @@
 # ☀️ Spain Solar Generation Forecast
 
+[![Run Tests](https://github.com/Antonyevan/ree-generation-forecast/actions/workflows/run_tests.yml/badge.svg)](https://github.com/Antonyevan/ree-generation-forecast/actions/workflows/run_tests.yml)
+
 A machine learning system forecasting solar power generation in Spain, benchmarked against Red Eléctrica de España's (REE) official day-ahead forecast, with all evaluation metrics computed live and validated through rigorous review.
 
 **🔴 Live dashboard:** [ree-solar-forecast.streamlit.app](https://ree-solar-forecast.streamlit.app)
@@ -36,6 +38,23 @@ The dashboard's cache (`@st.cache_data(ttl=3600)`) rebuilds hourly, ensuring sch
 
 ---
 
+## Testing
+
+The `solar_rolling_3h` leakage fix (see Project Journey, step 5) is locked in by automated regression tests, not just a one-time manual fix:
+
+- **Two targeted tests** verify the exact `.shift(1)` fix holds in both the historical (`load_and_engineer`) and live (`build_live_features`) code paths — the live path had the identical, previously undetected leak, found and fixed while adding this test coverage.
+- **One general test** verifies that no feature depends on future data at all, by comparing feature output on identical datasets where only future rows differ — designed to catch a similar leak in any feature, not just the one already found.
+
+All tests run automatically via GitHub Actions on every push to `main` (see badge above), so a future change reintroducing this class of bug would fail visibly before being merged, not silently ship.
+
+Run locally:
+```bash
+pip install pytest
+pytest tests/ -v
+```
+
+---
+
 ## Project Journey
 
 1. **Historical baseline.** REE's live API was unavailable during the first development week; a well-established Kaggle dataset (2015–2018) was used to proceed without delay.
@@ -51,6 +70,7 @@ The dashboard's cache (`@st.cache_data(ttl=3600)`) rebuilds hourly, ensuring sch
 
    This defect was identified independently, post-publication, through structured validation of the result rather than an external report — and corrected transparently across the dashboard, this repository, and all public communications referencing the original figures.
 6. **Pipeline automation.** Two scheduled GitHub Actions workflows maintain the live cache and training dataset without manual intervention, ensuring corrected figures remain current going forward.
+7. **Automated regression testing.** Following the leakage investigation, a `pytest` suite was added covering both the historical and live feature-engineering paths, plus a general future-data-independence check. Wired into GitHub Actions to run on every push, so this class of bug cannot silently reappear (see Testing, above).
 
 ---
 
@@ -74,8 +94,10 @@ The dashboard's cache (`@st.cache_data(ttl=3600)`) rebuilds hourly, ensuring sch
 | `train_model_recent.py` | Trains and evaluates the recent-data model |
 | `fetch_live_data.py` | Fetches and caches live ESIOS data (automated via GitHub Actions) |
 | `dashboard.py` | Streamlit dashboard; all comparison statistics computed live |
+| `tests/test_features.py` | Regression tests for the feature engineering leakage fix |
 | `.github/workflows/fetch_live_data.yml` | Scheduled workflow: live cache refresh, every 30 minutes |
 | `.github/workflows/refresh_recent_data.yml` | Scheduled workflow: training data refresh, weekly |
+| `.github/workflows/run_tests.yml` | Scheduled workflow: runs pytest on every push to `main` |
 | `requirements.txt` | Python dependencies |
 
 ---
@@ -108,6 +130,7 @@ To enable automated refresh: add `ESIOS_API_TOKEN` as a repository secret (Setti
 - **All dashboard metrics computed live**, ensuring accuracy is maintained automatically as underlying data or models change.
 - **Live data cached via scheduled pipeline**, in compliance with ESIOS API terms of use and standard practice for third-party API rate limits.
 - **A GenAI explanation layer was evaluated and deliberately excluded** to maintain focus on the core forecasting problem.
+- **Feature engineering is covered by automated regression tests**, run on every push via GitHub Actions, ensuring the leakage fix (and future feature changes) can't silently break correctness.
 
 ---
 
