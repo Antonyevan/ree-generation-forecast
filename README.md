@@ -55,6 +55,28 @@ pytest tests/ -v
 
 ---
 
+## Experiment tracking
+
+Both training scripts (`train_model.py` for the historical model, `train_model_recent.py` for the recent-data model) log every run via **MLflow** — parameters, evaluation metrics, and the trained model artifact — to a local SQLite-backed store, so results are never lost to a scrolled-past terminal window.
+
+Each run records:
+- **Parameters:** feature list, model type, random state, train/test row counts, test window size
+- **Metrics:** REE baseline MAE, model MAE, and improvement percentage
+- **Artifact:** the trained sklearn model itself
+
+This matters specifically because the recent model's win rate against REE varies by test window (documented as a real, honest range in the Project Journey) — MLflow keeps an exact, queryable, timestamped record of every retrain and its result, rather than relying on memory or a single restated number.
+
+MLflow tracking is a local, personal tool for development — not part of the deployed pipeline — and is intentionally excluded from version control (`mlruns/`, `mlflow.db` are gitignored).
+
+To view it locally:
+```bash
+pip install mlflow
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001
+```
+Then open `http://127.0.0.1:5001`.
+
+---
+
 ## Project Journey
 
 1. **Historical baseline.** REE's live API was unavailable during the first development week; a well-established Kaggle dataset (2015–2018) was used to proceed without delay.
@@ -71,6 +93,7 @@ pytest tests/ -v
    This defect was identified independently, post-publication, through structured validation of the result rather than an external report — and corrected transparently across the dashboard, this repository, and all public communications referencing the original figures.
 6. **Pipeline automation.** Two scheduled GitHub Actions workflows maintain the live cache and training dataset without manual intervention, ensuring corrected figures remain current going forward.
 7. **Automated regression testing.** Following the leakage investigation, a `pytest` suite was added covering both the historical and live feature-engineering paths, plus a general future-data-independence check. Wired into GitHub Actions to run on every push, so this class of bug cannot silently reappear (see Testing, above).
+8. **Experiment tracking added.** Both training scripts now log parameters, metrics, and model artifacts via MLflow on every run, replacing print-statement-only output with a permanent, queryable training history (see Experiment tracking, above).
 
 ---
 
@@ -88,10 +111,10 @@ pytest tests/ -v
 | `pull_ree_generation_data.py` | Original REE REData API integration; retained as documentation of a multi-day outage encountered early in development |
 | `eda.py` | Exploratory analysis of the 2015–2018 dataset; the Seville storm forecast-error investigation |
 | `features.py` | Shared feature engineering, used by both models and the live dashboard; contains the data leakage fix documented above |
-| `train_model.py` | Trains and evaluates the historical (2015–2018) model |
+| `train_model.py` | Trains and evaluates the historical (2015–2018) model; logs to MLflow |
 | `evaluate_errors.py` | Error analysis for the historical model |
 | `pull_recent_data.py` | Pulls ~1 year of recent ESIOS data for retraining |
-| `train_model_recent.py` | Trains and evaluates the recent-data model |
+| `train_model_recent.py` | Trains and evaluates the recent-data model; logs to MLflow |
 | `fetch_live_data.py` | Fetches and caches live ESIOS data (automated via GitHub Actions) |
 | `dashboard.py` | Streamlit dashboard; all comparison statistics computed live |
 | `tests/test_features.py` | Regression tests for the feature engineering leakage fix |
@@ -131,9 +154,10 @@ To enable automated refresh: add `ESIOS_API_TOKEN` as a repository secret (Setti
 - **Live data cached via scheduled pipeline**, in compliance with ESIOS API terms of use and standard practice for third-party API rate limits.
 - **A GenAI explanation layer was evaluated and deliberately excluded** to maintain focus on the core forecasting problem.
 - **Feature engineering is covered by automated regression tests**, run on every push via GitHub Actions, ensuring the leakage fix (and future feature changes) can't silently break correctness.
+- **Every training run is logged via MLflow**, giving an exact, timestamped record of parameters and results across retrains rather than relying on memory or a single restated figure.
 
 ---
 
 ## Tech Stack
 
-Python, pandas, scikit-learn (Gradient Boosting), Streamlit, GitHub Actions, REE ESIOS API, Kaggle dataset.
+Python, pandas, scikit-learn (Gradient Boosting), Streamlit, GitHub Actions, MLflow, REE ESIOS API, Kaggle dataset.
