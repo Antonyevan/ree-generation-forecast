@@ -7,7 +7,7 @@ from features import build_live_features, time_based_split
 
 FEATURES = ['hour', 'day_of_week', 'solar_lag_24h', 'wind_lag_24h', 'solar_rolling_3h']
 
-
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 mlflow.set_experiment("solar-forecast-recent")
 
 with mlflow.start_run():
