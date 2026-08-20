@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY features.py .
+COPY train_model.py .
+COPY train_model_recent.py .
+COPY data/ ./data/
+
+CMD ["python3", "train_model_recent.py"]
