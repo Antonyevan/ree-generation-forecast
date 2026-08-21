@@ -77,6 +77,29 @@ Then open `http://127.0.0.1:5001`.
 
 ---
 
+## Containerization
+
+The project ships as two separate Docker containers, reflecting their different roles:
+
+- **`Dockerfile`** — containerizes the live dashboard (`dashboard.py`). A long-running service, exposing port 8501.
+- **`Dockerfile.train`** — containerizes the training pipeline (`train_model.py` / `train_model_recent.py`). A one-shot job: runs, logs to MLflow, exits.
+
+This split follows standard practice: a persistent service and a run-once job have different operational needs and don't belong in the same container.
+
+Build and run the dashboard:
+```bash
+docker build -t solar-dashboard .
+docker run -p 8501:8501 solar-dashboard
+```
+
+Build and run training (mount `mlflow.db` so results persist outside the container):
+```bash
+docker build -f Dockerfile.train -t solar-training .
+docker run -v $(pwd)/mlflow.db:/app/mlflow.db solar-training
+```
+
+---
+
 ## Project Journey
 
 1. **Historical baseline.** REE's live API was unavailable during the first development week; a well-established Kaggle dataset (2015–2018) was used to proceed without delay.
@@ -94,6 +117,7 @@ Then open `http://127.0.0.1:5001`.
 6. **Pipeline automation.** Two scheduled GitHub Actions workflows maintain the live cache and training dataset without manual intervention, ensuring corrected figures remain current going forward.
 7. **Automated regression testing.** Following the leakage investigation, a `pytest` suite was added covering both the historical and live feature-engineering paths, plus a general future-data-independence check. Wired into GitHub Actions to run on every push, so this class of bug cannot silently reappear (see Testing, above).
 8. **Experiment tracking added.** Both training scripts now log parameters, metrics, and model artifacts via MLflow on every run, replacing print-statement-only output with a permanent, queryable training history (see Experiment tracking, above).
+9. **Containerization.** Both the dashboard and training pipeline were containerized separately via Docker, verified by running each in isolation and confirming identical results — the dashboard rendering correctly at `localhost:8501`, and a training run's MLflow-logged metrics matching a native run exactly, proving results persist correctly outside the container via a mounted volume.
 
 ---
 
@@ -118,6 +142,9 @@ Then open `http://127.0.0.1:5001`.
 | `fetch_live_data.py` | Fetches and caches live ESIOS data (automated via GitHub Actions) |
 | `dashboard.py` | Streamlit dashboard; all comparison statistics computed live |
 | `tests/test_features.py` | Regression tests for the feature engineering leakage fix |
+| `Dockerfile` | Containerizes the dashboard as a persistent service |
+| `Dockerfile.train` | Containerizes the training pipeline as a one-shot job |
+| `.dockerignore` | Excludes local-only files (MLflow tracking data, tests, git metadata) from the build context |
 | `.github/workflows/fetch_live_data.yml` | Scheduled workflow: live cache refresh, every 30 minutes |
 | `.github/workflows/refresh_recent_data.yml` | Scheduled workflow: training data refresh, weekly |
 | `.github/workflows/run_tests.yml` | Scheduled workflow: runs pytest on every push to `main` |
@@ -155,9 +182,10 @@ To enable automated refresh: add `ESIOS_API_TOKEN` as a repository secret (Setti
 - **A GenAI explanation layer was evaluated and deliberately excluded** to maintain focus on the core forecasting problem.
 - **Feature engineering is covered by automated regression tests**, run on every push via GitHub Actions, ensuring the leakage fix (and future feature changes) can't silently break correctness.
 - **Every training run is logged via MLflow**, giving an exact, timestamped record of parameters and results across retrains rather than relying on memory or a single restated figure.
+- **Dashboard and training are containerized separately via Docker**, reflecting their different operational shapes (persistent service vs. one-shot job) and giving anyone an environment-identical way to reproduce results.
 
 ---
 
 ## Tech Stack
 
-Python, pandas, scikit-learn (Gradient Boosting), Streamlit, GitHub Actions, MLflow, REE ESIOS API, Kaggle dataset.
+Python, pandas, scikit-learn (Gradient Boosting), Streamlit, GitHub Actions, MLflow, Docker, REE ESIOS API, Kaggle dataset.
