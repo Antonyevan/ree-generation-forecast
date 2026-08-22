@@ -139,7 +139,7 @@ with tab_live:
 
             live_chart = (lines + rule + points + hover_target).properties(height=400)
 
-            st.altair_chart(live_chart, use_container_width=True)
+            st.altair_chart(live_chart, width='stretch')
 
             col1, col2 = st.columns(2)
             col1.metric(
@@ -216,7 +216,7 @@ with tab_live:
                 'baseline_error': 'REE MAE (MW)'
             })
 
-            st.dataframe(daily_summary, use_container_width=True)
+            st.dataframe(daily_summary, width='stretch')
 
 
 # ── HISTORICAL TAB — uses the original 2015-2018 model ──────────────────
