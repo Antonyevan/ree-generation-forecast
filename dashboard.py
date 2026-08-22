@@ -5,6 +5,7 @@ import pandas as pd
 import altair as alt
 from sklearn.ensemble import GradientBoostingRegressor
 from features import load_and_engineer, time_based_split, build_live_features
+import joblib
 
 st.set_page_config(page_title="Spain Solar Forecast", layout="wide")
 st.title("☀️ Spain Solar Generation Forecast")
@@ -26,14 +27,15 @@ def get_historical_model_and_test():
 
 
 # ── Recent model: trained on the last ~1 year of ESIOS data ────────────
-@st.cache_data(ttl=3600)  # rebuild at most once per hour, so weekly data refreshes actually get picked up
+@st.cache_data(ttl=3600)
 def get_recent_model_and_test():
     with open("data/recent_solar_data.json") as f:
         recent_data = json.load(f)
     df_clean = build_live_features(recent_data)
     train, test = time_based_split(df_clean, test_days=60)
-    model = GradientBoostingRegressor(random_state=42)
-    model.fit(train[FEATURES], train['generation solar'])
+
+    model = joblib.load("recent_model.pkl")
+
     test = test.copy()
     test['model_pred'] = model.predict(test[FEATURES])
     return model, test

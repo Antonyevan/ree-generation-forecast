@@ -56,3 +56,7 @@ with mlflow.start_run():
 
     # --- log the model itself, so you have the actual artifact, not just numbers ---
     mlflow.sklearn.log_model(model, "model")
+    
+import joblib
+joblib.dump(model, "recent_model.pkl")
+print("Model saved to recent_model.pkl")
