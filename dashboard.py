@@ -5,6 +5,7 @@ import pandas as pd
 import altair as alt
 from sklearn.ensemble import GradientBoostingRegressor
 from features import load_and_engineer, time_based_split, build_live_features
+from anomaly_detection import detect_anomalies
 import joblib
 
 st.set_page_config(page_title="Spain Solar Forecast", layout="wide")
@@ -203,8 +204,29 @@ with tab_live:
                     "Performance varies day to day — see 'Project Journey' in the README."
                 )
 
-            st.markdown("### 📅 Most recent week")
-            st.caption("Shown for transparency — a single week is a small, noisy sample, not a representative average.")
+            # ── Anomaly detection: flag statistically unusual error days ────
+            anomalies, anomaly_threshold = detect_anomalies(full_daily_summary)
+
+            if not anomalies.empty:
+                st.markdown("### ⚠️ Anomaly detection")
+                st.caption(
+                    f"Days where model error exceeded {anomaly_threshold:.0f} MW "
+                    f"(mean + 2 std. dev. over the test period) — worth investigating for "
+                    f"patterns that could inform future feature engineering."
+                )
+                anomaly_display = anomalies[['model_error']].round(1).rename(
+                    columns={'model_error': 'Model MAE (MW)'}
+                )
+                st.dataframe(anomaly_display, width='stretch')
+            else:
+                st.caption("✅ No statistically unusual error spikes detected in the current test period.")
+
+            st.markdown("### 📅 Most recent week in training data")
+            st.caption(
+                "Most recent complete week available in the training dataset (refreshed weekly — "
+                "see README), not necessarily the last 7 calendar days. A small, noisy sample, "
+                "not a representative average. For today's live comparison, see the Live tab above."
+            )
 
             daily_summary = full_daily_summary.tail(7).round(1)
             daily_summary['Winner'] = daily_summary.apply(
