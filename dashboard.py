@@ -204,20 +204,47 @@ with tab_live:
                     "Performance varies day to day — see 'Project Journey' in the README."
                 )
 
-            # ── Anomaly detection: flag statistically unusual error days ────
+                                                # ── Anomaly detection: flag statistically unusual error days ────
             anomalies, anomaly_threshold = detect_anomalies(full_daily_summary)
-
             if not anomalies.empty:
                 st.markdown("### ⚠️ Anomaly detection")
                 st.caption(
                     f"Days where model error exceeded {anomaly_threshold:.0f} MW "
-                    f"(mean + 2 std. dev. over the test period) — worth investigating for "
-                    f"patterns that could inform future feature engineering."
+                    f"(mean + 2 std. dev. over the test period) — click a row below to see "
+                    f"what happened that day, hour by hour."
                 )
                 anomaly_display = anomalies[['model_error']].round(1).rename(
                     columns={'model_error': 'Model MAE (MW)'}
                 )
-                st.dataframe(anomaly_display, width='stretch')
+
+                selection = st.dataframe(
+                    anomaly_display,
+                    width='stretch',
+                    on_select="rerun",
+                    selection_mode="single-row"
+                )
+
+                if selection.selection.rows:
+                    selected_idx = selection.selection.rows[0]
+                    selected_anomaly_date = anomaly_display.index[selected_idx]
+
+                    day_detail = full_daily[full_daily['date'] == selected_anomaly_date]
+
+                    day_detail_display = day_detail.rename(columns={
+                        'generation solar': 'Actual',
+                        'forecast solar day ahead': 'REE Forecast',
+                        'model_pred': 'Gradient Boosting Forecast'
+                    })
+
+                    st.markdown(f"#### {selected_anomaly_date} — hour by hour")
+                    st.line_chart(
+                        day_detail_display.set_index('time')[['Actual', 'REE Forecast', 'Gradient Boosting Forecast']],
+                        color=['#9ca3af', '#ef4444', '#3b82f6']
+                    )
+                    st.caption(
+                        "Shows how the model failed that day (consistently off, or one sharp "
+                        "miss) — not why, since that needs external context this project doesn't yet have."
+                    )
             else:
                 st.caption("✅ No statistically unusual error spikes detected in the current test period.")
 
@@ -239,7 +266,7 @@ with tab_live:
             })
 
             st.dataframe(daily_summary, width='stretch')
-
+        
 
 # ── HISTORICAL TAB — uses the original 2015-2018 model ──────────────────
 with tab_historical:
