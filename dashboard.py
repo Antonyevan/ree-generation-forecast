@@ -5,7 +5,7 @@ import pandas as pd
 import altair as alt
 from sklearn.ensemble import GradientBoostingRegressor
 from features import load_and_engineer, time_based_split, build_live_features
-from anomaly_detection import detect_anomalies
+from anomaly_detection import detect_anomalies, record_anomalies
 import joblib
 
 st.set_page_config(page_title="Spain Solar Forecast", layout="wide")
@@ -206,6 +206,7 @@ with tab_live:
 
                                                 # ── Anomaly detection: flag statistically unusual error days ────
             anomalies, anomaly_threshold = detect_anomalies(full_daily_summary)
+            record_anomalies(anomalies)
             if not anomalies.empty:
                 st.markdown("### ⚠️ Anomaly detection")
                 st.caption(
