@@ -1,0 +1,16 @@
+{
+  "computed_at": "2026-09-02T12:51:04.297087+00:00",
+  "live_data_fetched_at": "2026-09-02T11:10:09.378898+00:00",
+  "hours_since_live_fetch": 1.7,
+  "model_mae": 1204.9,
+  "baseline_mae": 832.1,
+  "improvement_pct": -44.8,
+  "win_rate_pct": 29.5,
+  "anomaly_count": 1,
+  "anomalies": [
+    {
+      "date": "2026-08-18",
+      "model_error": 2292.7
+    }
+  ]
+}

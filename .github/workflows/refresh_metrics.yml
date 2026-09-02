@@ -1,0 +1,35 @@
+name: Refresh Latest Metrics
+
+on:
+  schedule:
+    - cron: '22,52 * * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compute latest metrics
+        run: python3 compute_latest_metrics.py
+
+      - name: Commit updated metrics
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add latest_metrics.json
+          git diff --quiet --cached || git commit -m "Auto-update latest metrics"
+          git push
