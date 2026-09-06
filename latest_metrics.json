@@ -1,16 +1,16 @@
 {
-  "computed_at": "2026-09-06T12:56:11.710708+00:00",
-  "live_data_fetched_at": "2026-09-06T11:17:50.367014+00:00",
-  "hours_since_live_fetch": 1.6,
-  "model_mae": 1297.6,
+  "computed_at": "2026-09-06T14:56:52.890027+00:00",
+  "live_data_fetched_at": "2026-09-06T14:22:18.287710+00:00",
+  "hours_since_live_fetch": 0.6,
+  "model_mae": 1148.1,
   "baseline_mae": 823.8,
-  "improvement_pct": -57.5,
-  "win_rate_pct": 23.0,
+  "improvement_pct": -39.4,
+  "win_rate_pct": 31.1,
   "anomaly_count": 1,
   "anomalies": [
     {
       "date": "2026-09-03",
-      "model_error": 2474.4
+      "model_error": 2310.6
     }
   ]
 }
