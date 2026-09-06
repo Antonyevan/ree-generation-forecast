@@ -1,16 +1,16 @@
 {
-  "computed_at": "2026-09-06T14:56:52.890027+00:00",
+  "computed_at": "2026-09-06T16:20:54.016362+00:00",
   "live_data_fetched_at": "2026-09-06T14:22:18.287710+00:00",
-  "hours_since_live_fetch": 0.6,
-  "model_mae": 1148.1,
+  "hours_since_live_fetch": 2.0,
+  "model_mae": 1158.1,
   "baseline_mae": 823.8,
-  "improvement_pct": -39.4,
-  "win_rate_pct": 31.1,
+  "improvement_pct": -40.6,
+  "win_rate_pct": 29.5,
   "anomaly_count": 1,
   "anomalies": [
     {
       "date": "2026-09-03",
-      "model_error": 2310.6
+      "model_error": 2277.3
     }
   ]
 }
