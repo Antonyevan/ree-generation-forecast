@@ -1,0 +1,35 @@
+name: Retrain Recent Model
+
+on:
+  schedule:
+    - cron: '15 4 * * 0'
+  workflow_dispatch:
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Retrain recent model
+        run: python3 train_model_recent.py
+
+      - name: Commit updated model
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add recent_model.pkl
+          git diff --quiet --cached || git commit -m "Weekly automated retrain: recent model"
+          git push
