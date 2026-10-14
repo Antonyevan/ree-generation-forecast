@@ -1,7 +1,7 @@
 {
-  "computed_at": "2026-10-13T23:58:28.252694+00:00",
-  "live_data_fetched_at": "2026-10-13T23:04:37.179525+00:00",
-  "hours_since_live_fetch": 0.9,
+  "computed_at": "2026-10-14T05:03:20.898557+00:00",
+  "live_data_fetched_at": "2026-10-14T01:50:03.260606+00:00",
+  "hours_since_live_fetch": 3.2,
   "model_mae": 1022.1,
   "baseline_mae": 662.0,
   "improvement_pct": -54.4,
